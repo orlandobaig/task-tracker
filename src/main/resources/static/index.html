@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        input[type="text"] { width: 250px; padding: 5px; }
+        button { margin-left: 5px; }
+        li { margin: 5px 0; }
+        .completed { text-decoration: line-through; color: gray; }
+    </style>
+</head>
+<body>
+    <h1>Task Tracker</h1>
+    <input type="text" id="taskInput" placeholder="Enter task">
+    <button onclick="addTask()">Add Task</button>
+
+    <ul id="taskList"></ul>
+
+    <script>
+        const API = '/tasks';
+
+        function fetchTasks() {
+            fetch(API)
+                .then(res => res.json())
+                .then(tasks => {
+                    const list = document.getElementById('taskList');
+                    list.innerHTML = '';
+                    tasks.forEach(task => {
+                        const li = document.createElement('li');
+                        li.className = task.completed ? 'completed' : '';
+                        li.innerHTML = `
+                            ${task.description}
+                            <button onclick="completeTask(${task.id})">✔</button>
+                            <button onclick="deleteTask(${task.id})">❌</button>
+                        `;
+                        list.appendChild(li);
+                    });
+                });
+        }
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const desc = input.value.trim();
+            if (!desc) return;
+
+            fetch(API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: desc })
+            }).then(() => {
+                input.value = '';
+                fetchTasks();
+            });
+        }
+
+        function deleteTask(id) {
+            fetch(`${API}/${id}`, { method: 'DELETE' })
+                .then(fetchTasks);
+        }
+
+        function completeTask(id) {
+            fetch(`${API}/${id}/complete`, { method: 'PUT' })
+                .then(fetchTasks);
+        }
+
+        fetchTasks(); // Load tasks on page load
+    </script>
+</body>
+</html>
